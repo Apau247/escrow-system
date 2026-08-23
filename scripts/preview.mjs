@@ -30,7 +30,20 @@ const shot = async (name) => {
 await page.goto(`${BASE}/login`, { waitUntil: "networkidle2" });
 await shot("01-login");
 
-// 2. Sign in as administrator via API from within the page (reliable),
+// 2. Sign in as the next of kin and capture her view.
+await page.evaluate(async () => {
+  const r = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "kendra.anderson@demo.escrow.test", password: "Test123!" }),
+  });
+  if (!r.ok) throw new Error("kendra login failed: " + r.status);
+});
+await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle2" });
+await page.waitForSelector("#main-content", { timeout: 30000 }).catch(() => {});
+await shot("02-kendra-next-of-kin");
+
+// 3. Sign in as administrator via API from within the page (reliable),
 //    then enter the authenticated portal.
 await page.evaluate(async () => {
   const r = await fetch("/api/auth/login", {
@@ -42,7 +55,7 @@ await page.evaluate(async () => {
 });
 await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle2" });
 await page.waitForSelector("#main-content", { timeout: 30000 }).catch(() => {});
-await shot("02-dashboard");
+await shot("03-dashboard");
 
 // 3. Timeline (workflow stages)
 await page.goto(`${BASE}/timeline`, { waitUntil: "networkidle2" });

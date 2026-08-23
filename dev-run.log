@@ -8,69 +8,44 @@
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 9.4s
+ ✓ Ready in 4.6s
  ○ Compiling /login ...
- ✓ Compiled /login in 1952ms (551 modules)
- GET /login 200 in 3222ms
- GET /login 200 in 93ms
- ○ Compiling /timeline ...
- ✓ Compiled /timeline in 1957ms (687 modules)
- GET /login 200 in 545ms
- GET /timeline 307 in 3829ms
- GET /login 200 in 433ms
- ○ Compiling /obligations ...
- ✓ Compiled /obligations in 690ms (680 modules)
- GET /obligations 307 in 1180ms
- GET /login 200 in 372ms
- ✓ Compiled /dashboard in 506ms (687 modules)
- GET /dashboard 307 in 826ms
- GET /login 200 in 126ms
- ✓ Compiled in 356ms (273 modules)
- GET /login 200 in 143ms
- GET /timeline 307 in 153ms
- GET /login 200 in 154ms
- GET /obligations 307 in 117ms
- GET /login 200 in 140ms
- GET /dashboard 307 in 113ms
- GET /login 200 in 143ms
- ✓ Compiled in 300ms (273 modules)
- GET /login 200 in 100ms
- ✓ Compiled in 260ms (273 modules)
- ✓ Compiled in 312ms (273 modules)
- GET /login 200 in 4004ms
+ ✓ Compiled /login in 1927ms (537 modules)
+ GET /login 200 in 3758ms
  ○ Compiling /api/auth/login ...
- ✓ Compiled /api/auth/login in 9.6s (625 modules)
+ ✓ Compiled /api/auth/login in 1160ms (572 modules)
 [escrow-db] Seeded TEST data: 5 users (password Test123!), escrow account, ledger, stages, documents, obligations, certificate.
- POST /api/auth/login 200 in 13517ms
- GET /login 200 in 256ms
+ POST /api/auth/login 200 in 3765ms
  ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 816ms (443 modules)
- GET /login 200 in 661ms
- GET /dashboard 200 in 1732ms
+ ✓ Compiled /dashboard in 811ms (699 modules)
+ GET /dashboard 200 in 1986ms
  ○ Compiling /api/portal ...
- ✓ Compiled /api/portal in 1156ms (709 modules)
- GET /api/portal 200 in 1465ms
- ✓ Compiled /timeline in 407ms (454 modules)
- GET /dashboard 200 in 562ms
- GET /timeline 200 in 1218ms
- GET /api/portal 200 in 86ms
+ ✓ Compiled /api/portal in 1114ms (705 modules)
+ GET /api/portal 200 in 1493ms
+ POST /api/auth/login 200 in 199ms
+ GET /dashboard 200 in 634ms
+ GET /api/portal 200 in 51ms
+ ○ Compiling /timeline ...
+ ✓ Compiled /timeline in 868ms (712 modules)
+ GET /timeline 200 in 1890ms
+ GET /api/portal 200 in 63ms
  ○ Compiling /obligations ...
- ✓ Compiled /obligations in 684ms (459 modules)
- GET /timeline 200 in 333ms
- GET /obligations 200 in 1807ms
- GET /api/portal 200 in 97ms
+ ✓ Compiled /obligations in 674ms (719 modules)
+ GET /obligations 200 in 1638ms
+ GET /api/portal 200 in 67ms
  ○ Compiling /api/auth/me ...
- ✓ Compiled /api/auth/me in 938ms (735 modules)
- GET /api/auth/me 200 in 1031ms
- GET /obligations 200 in 146ms
- GET /dashboard 200 in 259ms
- GET /api/portal 200 in 62ms
- GET /login 200 in 325ms
- POST /api/auth/login 401 in 227ms
- POST /api/auth/login 401 in 61ms
- POST /api/auth/login 401 in 65ms
+ ✓ Compiled /api/auth/me in 626ms (721 modules)
+ GET /api/auth/me 200 in 799ms
+ GET /dashboard 200 in 347ms
+ GET /api/portal 200 in 40ms
+ GET /login 200 in 279ms
+ GET /dashboard 307 in 221ms
+ GET /login 200 in 206ms
  POST /api/auth/login 200 in 156ms
- GET /dashboard 200 in 84ms
- GET /dashboard 200 in 79ms
- GET /api/portal 200 in 87ms
- GET /api/portal 200 in 285ms
+ GET /dashboard 200 in 61ms
+ GET /dashboard 200 in 85ms
+ GET /api/portal 200 in 56ms
+ GET /api/portal 200 in 60ms
+ GET /dashboard 200 in 214ms
+ GET /api/portal 200 in 45ms
+ ○ Compiling /api/auth/logout ...

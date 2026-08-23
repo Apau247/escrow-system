@@ -58,7 +58,7 @@ export default function Shell({
   user,
   children,
 }: {
-  user: { name: string; email: string; role: Role };
+  user: { name: string; email: string; role: Role; profileTitle?: string | null };
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -108,6 +108,7 @@ export default function Shell({
         <div className="mt-auto space-y-3">
           <div className="rounded-lg border border-white/10 bg-black/20 p-3">
             <p className="truncate text-sm font-semibold text-white">{user.name}</p>
+            {user.profileTitle && <p className="mt-0.5 text-xs font-medium text-gold-400">{user.profileTitle}</p>}
             <p className="badge mt-1 bg-sky-500/15 text-sky-300">{user.role.replaceAll("_", " ")}</p>
           </div>
           <button type="button" onClick={logout} disabled={busy} className="btn-secondary w-full">
@@ -150,6 +151,7 @@ export default function Shell({
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 p-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-white">{user.name}</p>
+                    {user.profileTitle && <p className="text-xs font-medium text-gold-400">{user.profileTitle}</p>}
                     <p className="truncate text-xs text-slate-400">{user.email}</p>
                   </div>
                   <button type="button" onClick={logout} disabled={busy} className="btn-secondary shrink-0 !py-1.5">

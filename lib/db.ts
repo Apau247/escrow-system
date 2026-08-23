@@ -29,6 +29,7 @@ function migrate(db: DatabaseSync) {
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL CHECK (role IN ('CUSTOMER','ESCROW_AGENT','COMPLIANCE_OFFICER','FINANCE_OFFICER','ADMIN')),
+      profile_title TEXT,
       mfa_secret_enc TEXT NOT NULL,
       mfa_enabled INTEGER NOT NULL DEFAULT 1,
       active INTEGER NOT NULL DEFAULT 1,
@@ -162,6 +163,14 @@ function migrate(db: DatabaseSync) {
       created_at TEXT NOT NULL
     );
   `);
+
+  // Incremental migration: profile_title on users (added for next-of-kin display).
+  const userCols = (db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>).map((c) => c.name);
+  if (!userCols.includes("profile_title")) {
+    db.exec("ALTER TABLE users ADD COLUMN profile_title TEXT");
+    db.prepare("UPDATE users SET profile_title = 'Escrow Depositor' WHERE email = 'customer@escrow.test'").run();
+    db.prepare("UPDATE users SET profile_title = 'Next of Kin' WHERE email = 'kendra.anderson@demo.escrow.test'").run();
+  }
 }
 
 function seedIfEmpty(db: DatabaseSync) {
@@ -170,19 +179,19 @@ function seedIfEmpty(db: DatabaseSync) {
 
   const now = () => new Date().toISOString();
   const insertUser = db.prepare(
-    `INSERT INTO users (name, email, password_hash, role, mfa_secret_enc, mfa_enabled, active, created_at)
-     VALUES (?, ?, ?, ?, ?, 1, 1, ?)`
+    `INSERT INTO users (name, email, password_hash, role, profile_title, mfa_secret_enc, mfa_enabled, active, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)`
   );
-  const people: Array<[string, string, string]> = [
-    ["Tabb Lyle Anderson", "customer@escrow.test", "CUSTOMER"],
-    ["Kendra Anderson", "kendra.anderson@demo.escrow.test", "CUSTOMER"],
-    ["Margaret Halloway", "agent@escrow.test", "ESCROW_AGENT"],
-    ["Daniel Osei", "compliance@escrow.test", "COMPLIANCE_OFFICER"],
-    ["Priya Nair", "finance@escrow.test", "FINANCE_OFFICER"],
-    ["System Administrator", "admin@escrow.test", "ADMIN"],
+  const people: Array<[string, string, string, string | null]> = [
+    ["Tabb Lyle Anderson", "customer@escrow.test", "CUSTOMER", "Escrow Depositor"],
+    ["Kendra Anderson", "kendra.anderson@demo.escrow.test", "CUSTOMER", "Next of Kin"],
+    ["Margaret Halloway", "agent@escrow.test", "ESCROW_AGENT", null],
+    ["Daniel Osei", "compliance@escrow.test", "COMPLIANCE_OFFICER", null],
+    ["Priya Nair", "finance@escrow.test", "FINANCE_OFFICER", null],
+    ["System Administrator", "admin@escrow.test", "ADMIN", null],
   ];
-  for (const [name, email, role] of people) {
-    insertUser.run(name, email, hashPassword("Test123!"), role, encryptField(generateTotpSecret()), now());
+  for (const [name, email, role, title] of people) {
+    insertUser.run(name, email, hashPassword("Test123!"), role, title, encryptField(generateTotpSecret()), now());
   }
 
   const PRINCIPAL_CENTS = 240_000_000; // $2,400,000.00 USD
