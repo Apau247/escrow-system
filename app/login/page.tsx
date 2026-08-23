@@ -4,15 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Banner } from "@/components/ui";
 
-const DEMO_ACCOUNTS = [
-  ["customer@escrow.test", "Customer"],
-  ["kendra.anderson@demo.escrow.test", "Customer — Next of Kin"],
-  ["agent@escrow.test", "Escrow Agent"],
-  ["compliance@escrow.test", "Compliance Officer"],
-  ["finance@escrow.test", "Finance Officer"],
-  ["admin@escrow.test", "Administrator"],
-];
-
 export default function LoginPage() {
   const router = useRouter();
   const [step, setStep] = useState<"password" | "mfa">("password");
@@ -140,7 +131,7 @@ export default function LoginPage() {
               <p className="text-sm text-slate-300">
                 Enter the 6-digit code from your authenticator app for <span className="font-semibold">{email}</span>.
               </p>
-              {hint && (
+              {process.env.NODE_ENV === "development" && hint && (
                 <div className="rounded-lg border border-dashed border-sky-500/40 bg-sky-500/5 px-3 py-2.5 text-sm">
                   <p className="font-bold text-sky-300">DEVELOPMENT ONLY — live TOTP helper</p>
                   <p className="mono mt-1 text-xl font-bold text-white">{hint.code}</p>
@@ -161,29 +152,6 @@ export default function LoginPage() {
               </button>
             </form>
           )}
-        </div>
-
-        <div className="card mt-4 p-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Seeded demo accounts</p>
-          <ul className="mt-2 grid gap-1.5 text-sm text-slate-300">
-            {DEMO_ACCOUNTS.map(([mail, role]) => (
-              <li key={mail} className="flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  className="mono text-left text-[13px] text-sky-300 hover:underline"
-                  onClick={() => {
-                    setEmail(mail);
-                    setPassword("Test123!");
-                    setStep("password");
-                  }}
-                >
-                  {mail}
-                </button>
-                <span className="badge bg-white/5 text-slate-400">{role}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-slate-500">Password for all accounts: Test123! · MFA enforced.</p>
         </div>
       </div>
     </div>
