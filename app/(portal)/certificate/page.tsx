@@ -1,31 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { postAction, useMe, usePortal } from "@/lib/client";
-import { Badge, Banner, Card, Field } from "@/components/ui";
+import { useAction, useMe, usePortal } from "@/lib/client";
+import { Badge, Banner, Card, EmptyState, ErrorState, Field, Loading } from "@/components/ui";
 
 export default function CertificatePage() {
-  const { data, refresh } = usePortal();
+  const { data, error, loading, refresh } = usePortal();
   const me = useMe();
-  const [msg, setMsg] = useState<{ tone: "green" | "red"; text: string } | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { run, busy, feedback } = useAction(refresh);
 
-  if (!data) return <p className="text-sm text-slate-400">Loading…</p>;
+  if (loading) return <Loading label="Loading escrow certificate..." />;
+  if (error || !data) return <ErrorState message={error ?? "No data returned."} onRetry={() => void refresh()} />;
+
   const cert = data.certificate;
-  if (!cert) return <Banner tone="red" title="No certificate on file" />;
+  if (!cert)
+    return (
+      <EmptyState
+        title="No certificate on file"
+        hint="An escrow certificate is created once the account record is established."
+      />
+    );
 
   async function issue() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await postAction("/api/actions/certificate");
-      setMsg({ tone: "green", text: res.message });
-      await refresh();
-    } catch (e: any) {
-      setMsg({ tone: "red", text: e.message });
-    } finally {
-      setBusy(false);
-    }
+    await run("/api/actions/certificate");
   }
 
   const isTest = cert.status === "TEST_DEVELOPMENT_RECORD";
@@ -33,7 +29,15 @@ export default function CertificatePage() {
 
   return (
     <div className="space-y-6">
-      {msg && <Banner tone={msg.tone === "green" ? "blue" : "red"} title="Certificate action">{msg.text}</Banner>}
+      {feedback && (
+        <Banner
+          tone={feedback.tone === "success" ? "green" : "red"}
+          title={feedback.tone === "success" ? "Certificate action completed" : "Action blocked"}
+          live={feedback.tone === "error" ? "alert" : "status"}
+        >
+          {feedback.text}
+        </Banner>
+      )}
 
       <div className={`card relative overflow-hidden p-1 ${isTest ? "ring-2 ring-amber-500/60" : "ring-2 ring-emerald-500/50"}`}>
         <div className="pointer-events-none absolute inset-x-0 top-6 z-10 flex justify-center">
@@ -71,17 +75,21 @@ export default function CertificatePage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Document history" subtitle="Append-only certificate event log">
-          <ol className="space-y-3 border-l border-white/10 pl-4">
-            {cert.document_history.map((h: any, i: number) => (
-              <li key={i} className="text-sm">
-                <p className="font-semibold text-slate-100">{h.event.replaceAll("_", " ")}</p>
-                <p className="text-xs text-slate-400">
-                  <span className="mono">{new Date(h.at).toLocaleString()}</span> · {h.by}
-                </p>
-                <p className="text-xs text-slate-400">{h.note}</p>
-              </li>
-            ))}
-          </ol>
+          {cert.document_history.length === 0 ? (
+            <EmptyState title="No certificate events yet" />
+          ) : (
+            <ol className="space-y-3 border-l border-white/10 pl-4">
+              {cert.document_history.map((h: any, i: number) => (
+                <li key={i} className="text-sm">
+                  <p className="font-semibold text-slate-100">{h.event.replaceAll("_", " ")}</p>
+                  <p className="text-xs text-slate-400">
+                    <span className="mono">{new Date(h.at).toLocaleString()}</span> · {h.by}
+                  </p>
+                  <p className="text-xs text-slate-400">{h.note}</p>
+                </li>
+              ))}
+            </ol>
+          )}
         </Card>
 
         <Card title="Formal issuance" subtitle="Institution-controlled verification step">
@@ -93,8 +101,8 @@ export default function CertificatePage() {
                 VERIFIED, and the action is restricted to an Administrator with full audit logging.
               </p>
               {me?.role === "ADMIN" && (
-                <button className="btn-primary mt-4" disabled={busy} onClick={issue}>
-                  {busy ? "Processing…" : "Verify & formally issue certificate"}
+                <button type="button" className="btn-primary mt-4" disabled={busy} aria-busy={busy} onClick={() => void issue()}>
+                  {busy ? "Processing..." : "Verify & formally issue certificate"}
                 </button>
               )}
               {me && me.role !== "ADMIN" && (
@@ -102,7 +110,7 @@ export default function CertificatePage() {
                   Only an Administrator can formally issue this certificate.
                 </Banner>
               )}
-              {!me && <p className="mt-3 text-xs text-slate-500">Loading role…</p>}
+              {!me && <p className="mt-3 text-xs text-slate-400">Loading role...</p>}
             </>
           ) : (
             <Banner tone="blue" title="Certificate has been formally issued">

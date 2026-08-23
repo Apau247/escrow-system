@@ -1,8 +1,10 @@
 /**
  * End-to-end workflow smoke test (run against a DEV server).
- * Exercises MFA login, RBAC denials, the obligation chain, sequential stage
- * gating, document gates, dual authorization, release, settlement, closure,
- * certificate issuance and audit-chain verification.
+ * Exercises MFA-less demo login, auth validation/lockout boundaries, RBAC
+ * denials, admin-only guards, the obligation chain, sequential stage gating,
+ * document gates, dual authorization, release, settlement, closure,
+ * certificate issuance, duplicate-action prevention and audit-chain
+ * verification.
  */
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const PW = "Test123!";
@@ -48,6 +50,12 @@ async function login(email) {
   return r.cookie;
 }
 
+// Page fetch that does NOT follow redirects (for guard assertions).
+async function page(path, cookie) {
+  const res = await fetch(BASE + path, { redirect: "manual", headers: cookie ? { Cookie: cookie } : {} });
+  return { status: res.status, location: res.headers.get("location") ?? "" };
+}
+
 const CUSTOMER = await login("customer@escrow.test");
 const FINANCE = await login("finance@escrow.test");
 const COMPLIANCE = await login("compliance@escrow.test");
@@ -70,6 +78,11 @@ async function login2(email) {
 
 // 1. Unauthenticated access is rejected.
 check("portal requires authentication", (await api("/api/portal")).status === 401);
+check("anonymous workflow action rejected", (await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE_REVIEW" } })).status === 401);
+
+// 1b. Login input validation.
+check("malformed email rejected with 400", (await api("/api/auth/login", { method: "POST", body: { email: "not-an-email", password: PW } })).status === 400);
+check("wrong password rejected with 401", (await api("/api/auth/login", { method: "POST", body: { email: "customer@escrow.test", password: "definitely-wrong" } })).status === 401);
 
 // 2. Customer can read but not act.
 let p = (await api("/api/portal", { cookie: CUSTOMER })).json;
@@ -83,10 +96,29 @@ check(
   "customer cannot verify obligation (RBAC)",
   (await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "verify" }, cookie: CUSTOMER })).status === 403
 );
+check("customer blocked from user directory API (admin-only)", (await api("/api/users", { cookie: CUSTOMER })).status === 403);
+check(
+  "unknown stage key returns 400",
+  (await api("/api/actions/stage", { method: "POST", body: { key: "NOT_A_STAGE" }, cookie: FINANCE })).status === 400
+);
+check(
+  "invalid obligation action returns 400",
+  (await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "self-release-funds" }, cookie: FINANCE })).status === 400
+);
+
+// Page-level guards: server-side redirect, not client-side role checks.
+let pg = await page("/admin/users");
+check("anonymous redirected to login from admin console", [301, 302, 303, 307, 308].includes(pg.status) && pg.location.includes("/login"), `${pg.status} -> ${pg.location}`);
+pg = await page("/admin/users", CUSTOMER);
+check("customer redirected away from admin console", [301, 302, 303, 307, 308].includes(pg.status) && pg.location.includes("/dashboard"), `${pg.status} -> ${pg.location}`);
+pg = await page("/admin/users", ADMIN);
+check("administrator can open admin console", pg.status === 200);
 
 // 3. Finance verifies assessment; premature authorize must fail.
 let res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "verify" }, cookie: FINANCE });
 check("finance verifies assessment", res.status === 200);
+res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "verify" }, cookie: FINANCE });
+check("duplicate verification rejected (state machine)", res.status === 409);
 res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "authorize" }, cookie: FINANCE });
 check("premature authorize blocked (chain order)", res.status === 409);
 
@@ -99,6 +131,8 @@ res = await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE
 check("finance cannot complete compliance stage (RBAC)", res.status === 403);
 res = await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE_REVIEW" }, cookie: COMPLIANCE });
 check("compliance completes stage 5", res.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE_REVIEW" }, cookie: COMPLIANCE });
+check("re-completing a finished stage is rejected (duplicate prevention)", res.status === 409);
 
 // Stage 6 must stay locked until obligation fully authorized+posted.
 res = await api("/api/actions/stage", { method: "POST", body: { key: "RELEASE_TAX_OBLIGATION_VERIFICATION" }, cookie: ADMIN });

@@ -23,12 +23,14 @@ export function StatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {
     COMPLETED: "green",
     VERIFIED: "green",
-    VERIFIED_UPLOADED: "blue",
     ISSUED: "green",
+    POSTED: "green",
     IN_PROGRESS: "amber",
     UPLOADED: "blue",
     PENDING: "slate",
     PENDING_VERIFICATION: "amber",
+    COMPLIANCE_REVIEWED: "blue",
+    AGENT_APPROVED: "blue",
     MISSING: "red",
     REJECTED: "red",
     RESTRICTED: "red",
@@ -81,8 +83,8 @@ export function Stat({
   return (
     <div className="card p-4">
       <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className={`mt-1.5 mono text-lg font-bold ${color}`}>{formatMoney(cents)}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      <p className={`mono mt-1.5 text-lg font-bold ${color}`}>{formatMoney(cents)}</p>
+      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
     </div>
   );
 }
@@ -91,18 +93,22 @@ export function Banner({
   tone = "amber",
   title,
   children,
+  live,
 }: {
-  tone?: "amber" | "red" | "blue";
+  tone?: "amber" | "red" | "blue" | "green";
   title: React.ReactNode;
   children?: React.ReactNode;
+  /** Renders as an ARIA live region for async action feedback. */
+  live?: "status" | "alert";
 }) {
   const styles = {
     amber: "border-amber-500/40 bg-amber-500/10",
     red: "border-red-500/40 bg-red-500/10",
     blue: "border-sky-500/40 bg-sky-500/10",
+    green: "border-emerald-500/40 bg-emerald-500/10",
   } as const;
   return (
-    <div className={`rounded-xl border px-4 py-3 text-sm ${styles[tone]}`}>
+    <div className={`rounded-xl border px-4 py-3 text-sm ${styles[tone]}`} role={live} aria-live={live ? "polite" : undefined}>
       <p className="font-bold">{title}</p>
       {children && <div className="mt-1 text-[13px] leading-relaxed text-slate-300">{children}</div>}
     </div>
@@ -112,8 +118,43 @@ export function Banner({
 export function Field({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</dt>
+      <dt className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
       <dd className={`mt-0.5 text-sm text-slate-100 ${mono ? "mono" : ""}`}>{value}</dd>
+    </div>
+  );
+}
+
+/** Consistent async-loading state. */
+export function Loading({ label = "Loading…" }: { label?: string }) {
+  return (
+    <div role="status" aria-live="polite" className="flex items-center gap-3 py-8 text-sm text-slate-400">
+      <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-amber-400" />
+      {label}
+    </div>
+  );
+}
+
+/** Consistent error state with optional retry. */
+export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-4">
+      <p className="text-sm font-bold text-red-300">Something went wrong</p>
+      <p className="mt-1 text-[13px] text-slate-300">{message}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="btn-secondary mt-3">
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Consistent empty state. */
+export function EmptyState({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-white/15 bg-black/10 px-4 py-10 text-center">
+      <p className="text-sm font-semibold text-slate-200">{title}</p>
+      {hint && <p className="mx-auto mt-1 max-w-md text-xs text-slate-400">{hint}</p>}
     </div>
   );
 }

@@ -96,7 +96,7 @@ export default function LoginPage() {
           </Banner>
 
           {error && (
-            <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            <p role="alert" className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
               {error}
             </p>
           )}
@@ -104,26 +104,36 @@ export default function LoginPage() {
           {step === "password" ? (
             <form onSubmit={submitPassword} className="mt-5 space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <label htmlFor="login-email" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
                   Work email
                 </label>
-                <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                <input
+                  id="login-email"
+                  className="input"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <label htmlFor="login-password" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
                   Password
                 </label>
                 <input
+                  id="login-password"
                   className="input"
                   type="password"
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Test123!"
                 />
               </div>
-              <button className="btn-primary w-full" disabled={busy}>
-                Continue → MFA
+              <button className="btn-primary w-full" disabled={busy} aria-busy={busy}>
+                Continue to multi-factor verification
               </button>
             </form>
           ) : (
@@ -133,21 +143,26 @@ export default function LoginPage() {
               </p>
               {process.env.NODE_ENV === "development" && hint && (
                 <div className="rounded-lg border border-dashed border-sky-500/40 bg-sky-500/5 px-3 py-2.5 text-sm">
-                  <p className="font-bold text-sky-300">DEVELOPMENT ONLY — live TOTP helper</p>
+                  <p className="font-bold text-sky-300">DEVELOPMENT ONLY - live TOTP helper</p>
                   <p className="mono mt-1 text-xl font-bold text-white">{hint.code}</p>
                   <p className="text-xs text-slate-400">expires in ~{hint.expires_in_seconds}s</p>
                 </div>
               )}
+              <label htmlFor="login-mfa-code" className="sr-only">
+                Six-digit authentication code
+              </label>
               <input
+                id="login-mfa-code"
                 className="input mono text-center text-xl tracking-[0.5em]"
                 inputMode="numeric"
+                autoComplete="one-time-code"
                 maxLength={6}
                 required
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="000000"
               />
-              <button className="btn-primary w-full" disabled={busy}>
+              <button className="btn-primary w-full" disabled={busy} aria-busy={busy}>
                 Verify & Sign In
               </button>
             </form>

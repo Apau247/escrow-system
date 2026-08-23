@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { postAction, useMe, usePortal } from "@/lib/client";
-import { Badge, Banner, Card, Money, StatusPill } from "@/components/ui";
+import { useAction, useMe, usePortal } from "@/lib/client";
+import { Badge, Banner, Card, EmptyState, ErrorState, Loading, Money, StatusPill } from "@/components/ui";
 
 const CHAIN = ["Assessment", "Verification (Finance)", "Compliance Review", "Escrow Agent Approval", "Posting"];
 
@@ -14,30 +13,13 @@ const NEXT_ACTION: Record<string, { action: string; label: string; roles: string
 };
 
 export default function ObligationsPage() {
-  const { data, refresh } = usePortal();
+  const { data, error, loading, refresh } = usePortal();
   const me = useMe();
-  const [msg, setMsg] = useState<{ tone: "green" | "red"; text: string } | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  if (!data) return <p className="text-sm text-slate-400">Loading…</p>;
-
-  async function run(id: number, action: string) {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await postAction("/api/actions/obligation", { id, action });
-      setMsg({ tone: "green", text: res.message });
-      await refresh();
-    } catch (e: any) {
-      setMsg({ tone: "red", text: e.message });
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { run, busy, feedback } = useAction(refresh);
 
   return (
     <div className="space-y-6">
-      <Banner tone="red" title="Release Tax / Obligation — TEST RECORD, NOT A PAYMENT GATE">
+      <Banner tone="red" title="Release Tax / Obligation - TEST RECORD, NOT A PAYMENT GATE">
         The $17,000.00 USD figure below is a synthetic test record. It is not an assessed or verified tax liability.
         This platform intentionally provides NO self-service payment and NO automatic payment-to-release mechanism:
         the obligation must pass the full institutional chain below before it can affect any balance, and even then
@@ -55,53 +37,74 @@ export default function ObligationsPage() {
         </div>
       </Card>
 
-      {msg && <Banner tone={msg.tone === "green" ? "blue" : "red"} title={msg.tone === "green" ? "Action recorded" : "Action blocked"}>{msg.text}</Banner>}
+      {loading ? (
+        <Card title="Obligations register"><Loading label="Loading obligations..." /></Card>
+      ) : error || !data ? (
+        <ErrorState message={error ?? "No data returned."} onRetry={() => void refresh()} />
+      ) : (
+        <>
+          {feedback && (
+            <Banner
+              tone={feedback.tone === "success" ? "green" : "red"}
+              title={feedback.tone === "success" ? "Action recorded" : "Action blocked"}
+              live={feedback.tone === "error" ? "alert" : "status"}
+            >
+              {feedback.text}
+            </Banner>
+          )}
 
-      <Card title="Obligations register" subtitle={`Currency: USD for all monetary values`}>
-        <div className="overflow-x-auto">
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Obligation</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Purpose</th>
-                <th>Next action (your role)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.obligations.map((o) => {
-                const next: { action: string; label: string; roles: string[] } | undefined = NEXT_ACTION[o.status];
-                const allowed = !!(next && me && next.roles.includes(me.role));
-                return (
-                  <tr key={o.id}>
-                    <td>
-                      <p className="font-semibold text-white">{o.label}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">{o.kind.replaceAll("_", " ")}</p>
-                    </td>
-                    <td className="mono whitespace-nowrap font-bold text-gold-400"><Money cents={o.amount_cents} /></td>
-                    <td><StatusPill status={o.status} /></td>
-                    <td className="max-w-xs text-xs text-slate-400">{o.purpose}</td>
-                    <td>
-                      {allowed && next ? (
-                        <button className="btn-primary !py-1.5 !text-xs" disabled={busy} onClick={() => run(o.id, next.action)}>
-                          {next.label}
-                        </button>
-                      ) : next ? (
-                        <Badge tone="slate">Requires {next.roles.map((r) => r.replaceAll("_", " ")).join(" / ")}</Badge>
-                      ) : o.status === "POSTED" ? (
-                        <Badge tone="green">Posted to ledger</Badge>
-                      ) : (
-                        <span className="text-xs text-slate-500">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+          <Card title="Obligations register" subtitle="Currency: USD for all monetary values">
+            {data.obligations.length === 0 ? (
+              <EmptyState title="No obligations recorded" hint="Assessed tax or charge obligations will appear here." />
+            ) : (
+              <div className="table-wrap">
+                <table className="table-base">
+                  <caption className="sr-only">Tax and fee obligations for this escrow account, with status and available actions</caption>
+                  <thead>
+                    <tr>
+                      <th>Obligation</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Purpose</th>
+                      <th>Next action (your role)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.obligations.map((o) => {
+                      const next = NEXT_ACTION[o.status] as { action: string; label: string; roles: string[] } | undefined;
+                      const allowed = !!(next && me && next.roles.includes(me.role));
+                      return (
+                        <tr key={o.id}>
+                          <td>
+                            <p className="font-semibold text-white">{o.label}</p>
+                            <p className="mt-0.5 text-xs text-slate-400">{o.kind.replaceAll("_", " ")}</p>
+                          </td>
+                          <td className="mono whitespace-nowrap font-bold text-gold-400"><Money cents={o.amount_cents} /></td>
+                          <td><StatusPill status={o.status} /></td>
+                          <td className="max-w-xs text-xs text-slate-400">{o.purpose}</td>
+                          <td>
+                            {allowed && next ? (
+                              <button type="button" className="btn-primary !py-1.5 !text-xs" disabled={busy} aria-busy={busy} onClick={() => void run("/api/actions/obligation", { id: o.id, action: next.action })}>
+                                {next.label}
+                              </button>
+                            ) : next ? (
+                              <Badge tone="slate">Requires {next.roles.map((r) => r.replaceAll("_", " ")).join(" / ")}</Badge>
+                            ) : o.status === "POSTED" ? (
+                              <Badge tone="green">Posted to ledger</Badge>
+                            ) : (
+                              <span className="text-xs text-slate-400">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </>
+      )}
     </div>
   );
 }

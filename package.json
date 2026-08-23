@@ -2,6 +2,9 @@
   "name": "escrow-management-system",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,6 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "lucide-react": "^1.33.0",
     "next": "^15.4.5",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

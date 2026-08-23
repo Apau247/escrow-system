@@ -18,6 +18,31 @@ body {
   color: #e5eaf3;
 }
 
+/* Visible keyboard focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--color-gold-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip-to-content link: hidden until focused. */
+.skip-link {
+  @apply absolute left-4 top-4 z-50 -translate-y-20 rounded-lg bg-gold-400 px-4 py-2 text-sm font-bold text-slate-950 transition-transform;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .card {
   @apply rounded-xl border border-white/10 bg-[#0b1426]/80 shadow-lg shadow-black/30 backdrop-blur;
 }
@@ -25,7 +50,7 @@ body {
   @apply p-5 sm:p-6;
 }
 .badge {
-  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide;
+  @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide;
 }
 .btn,
 .btn-primary,
@@ -45,11 +70,14 @@ body {
 .input {
   @apply w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-amber-400/60;
 }
+.table-wrap {
+  @apply overflow-x-auto rounded-lg border border-white/10;
+}
 .table-base {
-  @apply w-full text-left text-sm;
+  @apply w-full min-w-[42rem] text-left text-sm;
 }
 .table-base th {
-  @apply border-b border-white/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400;
+  @apply border-b border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-300;
 }
 .table-base td {
   @apply border-b border-white/5 px-4 py-2.5 align-top text-slate-200;

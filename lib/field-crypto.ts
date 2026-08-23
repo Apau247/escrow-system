@@ -27,7 +27,7 @@ export function readOrCreateHexKey(file: string, byteLength: number): string {
 
 function masterKey(): Buffer {
   if (keyCache) return keyCache;
-  const dir = path.join(process.cwd(), "data");
+  const dir = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
   fs.mkdirSync(dir, { recursive: true });
   keyCache = Buffer.from(readOrCreateHexKey(path.join(dir, "field.key"), 32), "hex");
   return keyCache;

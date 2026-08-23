@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface PortalData {
   escrow: any;
@@ -69,4 +69,52 @@ export async function postAction(url: string, body?: unknown) {
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error ?? `Request failed (${res.status})`);
   return json;
+}
+
+export interface ActionFeedback {
+  tone: "success" | "error";
+  text: string;
+}
+
+/**
+ * Shared wrapper for workflow actions: prevents duplicate submissions while
+ * a request is in flight, surfaces success/failure feedback, and refreshes
+ * portal data after completion.
+ */
+export function useAction(refresh?: () => Promise<void>) {
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
+  const busyRef = useRef(false);
+
+  const run = useCallback(
+    async (url: string, body?: unknown): Promise<boolean> => {
+      if (busyRef.current) return false;
+      busyRef.current = true;
+      setBusy(true);
+      setFeedback(null);
+      try {
+        const json = await postAction(url, body);
+        setFeedback({
+          tone: "success",
+          text: typeof json?.message === "string" && json.message ? json.message : "Action completed successfully.",
+        });
+        await refresh?.();
+        return true;
+      } catch (e: unknown) {
+        setFeedback({
+          tone: "error",
+          text: e instanceof Error && e.message ? e.message : "The action could not be completed.",
+        });
+        return false;
+      } finally {
+        busyRef.current = false;
+        setBusy(false);
+      }
+    },
+    [refresh],
+  );
+
+  const clear = useCallback(() => setFeedback(null), []);
+
+  return { run, busy, feedback, clear };
 }

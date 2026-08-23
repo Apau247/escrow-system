@@ -22,7 +22,7 @@ let secretCache: string | null = null;
 
 function jwtSecret(): string {
   if (secretCache) return secretCache;
-  const dir = path.join(process.cwd(), "data");
+  const dir = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
   fs.mkdirSync(dir, { recursive: true });
   secretCache = readOrCreateHexKey(path.join(dir, "session.secret"), 48);
   return secretCache;
