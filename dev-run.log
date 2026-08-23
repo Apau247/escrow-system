@@ -11,3 +11,72 @@
  ✓ Ready in 5.5s
  ○ Compiling /api/auth/login ...
  ✓ Compiled /api/auth/login in 1661ms (314 modules)
+[escrow-db] Seeded TEST data: 5 users (password Test123!), escrow account, ledger, stages, documents, obligations, certificate.
+ POST /api/auth/login 200 in 4411ms
+ POST /api/auth/login 200 in 669ms
+ POST /api/auth/login 200 in 213ms
+ POST /api/auth/login 200 in 217ms
+ POST /api/auth/login 200 in 151ms
+ POST /api/auth/login 200 in 218ms
+ ○ Compiling /api/portal ...
+ ✓ Compiled /api/portal in 814ms (320 modules)
+ GET /api/portal 200 in 984ms
+ GET /api/portal 401 in 86ms
+ ✓ Compiled /api/actions/stage in 398ms (322 modules)
+ POST /api/actions/stage 401 in 546ms
+ POST /api/auth/login 400 in 104ms
+ POST /api/auth/login 401 in 178ms
+ GET /api/portal 200 in 83ms
+ ✓ Compiled /api/actions/obligation in 372ms (325 modules)
+ POST /api/actions/obligation 403 in 504ms
+ ○ Compiling /api/users ...
+ ✓ Compiled /api/users in 511ms (327 modules)
+ GET /api/users 403 in 754ms
+ POST /api/actions/stage 400 in 49ms
+ POST /api/actions/obligation 400 in 48ms
+ ○ Compiling /admin/users ...
+ ✓ Compiled /admin/users in 2.2s (700 modules)
+ GET /admin/users 307 in 3327ms
+ GET /admin/users 307 in 253ms
+ POST /api/actions/obligation 200 in 157ms
+ GET /admin/users 200 in 334ms
+ POST /api/actions/obligation 409 in 68ms
+ POST /api/actions/obligation 409 in 64ms
+ POST /api/actions/obligation 403 in 35ms
+ POST /api/actions/stage 403 in 72ms
+ POST /api/actions/stage 200 in 177ms
+ POST /api/actions/stage 409 in 59ms
+ POST /api/actions/stage 409 in 66ms
+ POST /api/actions/obligation 200 in 158ms
+ POST /api/actions/obligation 200 in 185ms
+ POST /api/actions/obligation 200 in 201ms
+ POST /api/actions/stage 403 in 85ms
+ POST /api/actions/stage 200 in 289ms
+ GET /api/portal 200 in 107ms
+ POST /api/actions/stage 200 in 214ms
+ POST /api/actions/stage 409 in 96ms
+ GET /api/portal 200 in 97ms
+ ○ Compiling /api/actions/document ...
+ ✓ Compiled /api/actions/document in 622ms (702 modules)
+ POST /api/actions/document 200 in 901ms
+ POST /api/actions/document 200 in 149ms
+ POST /api/actions/document 200 in 173ms
+ POST /api/actions/document 200 in 88ms
+ POST /api/actions/document 200 in 84ms
+ POST /api/actions/document 200 in 63ms
+ POST /api/actions/document 200 in 73ms
+ POST /api/actions/document 200 in 84ms
+ POST /api/actions/stage 200 in 151ms
+ POST /api/actions/stage 409 in 62ms
+ POST /api/actions/stage 200 in 263ms
+ GET /api/portal 200 in 49ms
+ POST /api/actions/stage 403 in 64ms
+ POST /api/actions/stage 200 in 239ms
+ POST /api/actions/stage 200 in 245ms
+ POST /api/actions/stage 403 in 67ms
+ POST /api/actions/stage 200 in 297ms
+ ○ Compiling /api/actions/certificate ...
+ ✓ Compiled /api/actions/certificate in 621ms (704 modules)
+ POST /api/actions/certificate 403 in 748ms
+ POST /api/actions/certificate 200 in 150ms
+ GET /api/portal 200 in 129ms
