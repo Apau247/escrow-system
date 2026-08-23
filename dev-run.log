@@ -60,3 +60,17 @@
  GET /obligations 200 in 1807ms
  GET /api/portal 200 in 97ms
  ○ Compiling /api/auth/me ...
+ ✓ Compiled /api/auth/me in 938ms (735 modules)
+ GET /api/auth/me 200 in 1031ms
+ GET /obligations 200 in 146ms
+ GET /dashboard 200 in 259ms
+ GET /api/portal 200 in 62ms
+ GET /login 200 in 325ms
+ POST /api/auth/login 401 in 227ms
+ POST /api/auth/login 401 in 61ms
+ POST /api/auth/login 401 in 65ms
+ POST /api/auth/login 200 in 156ms
+ GET /dashboard 200 in 84ms
+ GET /dashboard 200 in 79ms
+ GET /api/portal 200 in 87ms
+ GET /api/portal 200 in 285ms
