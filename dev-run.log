@@ -49,3 +49,8 @@
  GET /dashboard 200 in 214ms
  GET /api/portal 200 in 45ms
  ○ Compiling /api/auth/logout ...
+ ✓ Compiled /api/auth/logout in 1626ms (727 modules)
+ POST /api/auth/logout 200 in 2221ms
+ GET /login 200 in 418ms
+ GET /login 200 in 442ms
+ GET /dashboard 200 in 948ms
