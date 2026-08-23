@@ -25,8 +25,8 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Sign-in failed");
+      const json = await res.json().catch(() => ({}) as any);
+      if (!res.ok) throw new Error(json.error ?? `Sign-in failed (${res.status}). Please try again.`);
       if (!json.mfa_required) {
         router.push("/dashboard");
         router.refresh();
@@ -35,7 +35,7 @@ export default function LoginPage() {
       setChallenge(json.challenge);
       setStep("mfa");
     } catch (e: any) {
-      setError(e.message);
+      setError(e?.message ?? "Sign-in failed. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -69,12 +69,12 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ challenge, code }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "MFA verification failed");
+      const json = await res.json().catch(() => ({}) as any);
+      if (!res.ok) throw new Error(json.error ?? `MFA verification failed (${res.status}). Please try again.`);
       router.push("/dashboard");
       router.refresh();
     } catch (e: any) {
-      setError(e.message);
+      setError(e?.message ?? "MFA verification failed. Please try again.");
     } finally {
       setBusy(false);
     }

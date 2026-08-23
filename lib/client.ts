@@ -32,11 +32,13 @@ export function usePortal() {
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/portal", { cache: "no-store" });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
-      setData(await res.json());
+      const json = await safeJson(res);
+      if (!res.ok) throw new Error(typeof json.error === "string" && json.error ? json.error : `HTTP ${res.status}`);
+      if (!json || typeof json !== "object") throw new Error("Server returned an invalid response.");
+      setData(json as unknown as PortalData);
       setError(null);
     } catch (e: any) {
-      setError(e.message ?? "Failed to load");
+      setError(e?.message ?? "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -53,11 +55,20 @@ export function useMe() {
   const [me, setMe] = useState<{ userId: number; name: string; email: string; role: string } | null>(null);
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j) => setMe(j.user))
+      .then(safeJson)
+      .then((j) => setMe((j.user as typeof me) ?? null))
       .catch(() => setMe(null));
   }, []);
   return me;
+}
+
+/** Parses a JSON response, returning {} for empty or malformed bodies. */
+export async function safeJson(res: Response): Promise<Record<string, unknown>> {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
 }
 
 export async function postAction(url: string, body?: unknown) {
@@ -66,8 +77,11 @@ export async function postAction(url: string, body?: unknown) {
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error ?? `Request failed (${res.status})`);
+  const json = await safeJson(res);
+  if (!res.ok) {
+    const msg = typeof json.error === "string" && json.error ? json.error : `Request failed (${res.status}).`;
+    throw new Error(msg);
+  }
   return json;
 }
 

@@ -19,9 +19,10 @@ export default function AuditPage() {
     setError(null);
     try {
       const r = await fetch("/api/portal", { cache: "no-store" });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `HTTP ${r.status}`);
-      const j = await r.json();
-      setData({ audit: j.audit, chain: j.chain, anomalies: j.anomalies });
+      const j = await r.json().catch(() => ({}) as any);
+      if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`);
+      if (!j || !Array.isArray(j.audit) || !j.chain) throw new Error("Server returned an invalid response. Please retry.");
+      setData({ audit: j.audit, chain: j.chain, anomalies: j.anomalies ?? [] });
     } catch (e: unknown) {
       setError(e instanceof Error && e.message ? e.message : "Failed to load audit log");
     } finally {

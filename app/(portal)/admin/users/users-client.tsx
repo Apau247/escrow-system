@@ -13,8 +13,9 @@ export default function UsersClient() {
     setError(null);
     try {
       const r = await fetch("/api/users", { cache: "no-store" });
-      const j = await r.json();
+      const j = await r.json().catch(() => ({}) as any);
       if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`);
+      if (!j || !Array.isArray(j.users)) throw new Error("Server returned an invalid response. Please retry.");
       setData(j);
     } catch (e: unknown) {
       setError(e instanceof Error && e.message ? e.message : "Failed to load users");
