@@ -12,3 +12,10 @@
  ○ Compiling /login ...
  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
  ✓ Compiled /login in 3.2s (558 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /login 200 in 2625ms
+ GET /login 200 in 5297ms
+ GET /login 200 in 552ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /icon.svg in 558ms (355 modules)
+ GET /icon.svg?ac7f5e34be704a26 200 in 772ms
