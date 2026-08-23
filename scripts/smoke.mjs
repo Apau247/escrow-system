@@ -54,13 +54,27 @@ const COMPLIANCE = await login("compliance@escrow.test");
 const AGENT = await login("agent@escrow.test");
 const ADMIN = await login("admin@escrow.test");
 
+// Next-of-kin customer account exists and can read the portal.
+let r = await login2("kendra.anderson@demo.escrow.test");
+check("next-of-kin demo customer can sign in and read portal", !!r);
+
+async function login2(email) {
+  try {
+    const c = await login(email);
+    const p = await api("/api/portal", { cookie: c });
+    return p.status === 200;
+  } catch {
+    return false;
+  }
+}
+
 // 1. Unauthenticated access is rejected.
 check("portal requires authentication", (await api("/api/portal")).status === 401);
 
 // 2. Customer can read but not act.
 let p = (await api("/api/portal", { cookie: CUSTOMER })).json;
 const obId = p.obligations[0].id;
-check("customer reads portal with correct escrow balance", p.balances.total_balance_cents === PRINCIPAL_CENTS, `$${p.balances.total_balance_cents / 100}`);
+check("customer reads portal with correct escrow balance", p.balances.total_balance_cents === PRINCIPAL_CENTS);
 check(
   "obligation seeded at $17,000.00 USD pending verification",
   p.obligations[0].amount_cents === CHARGE_CENTS && p.obligations[0].currency_code === "USD" && p.obligations[0].status === "PENDING_VERIFICATION"
@@ -71,67 +85,66 @@ check(
 );
 
 // 3. Finance verifies assessment; premature authorize must fail.
-let r = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "verify" }, cookie: FINANCE });
-check("finance verifies assessment", r.status === 200);
-r = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "authorize" }, cookie: FINANCE });
-check("premature authorize blocked (chain order)", r.status === 409);
+let res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "verify" }, cookie: FINANCE });
+check("finance verifies assessment", res.status === 200);
+res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "authorize" }, cookie: FINANCE });
+check("premature authorize blocked (chain order)", res.status === 409);
 
 // 4. Compliance reviews, cannot approve; completes general compliance stage.
 check(
   "compliance cannot approve obligation (RBAC)",
   (await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "approve" }, cookie: COMPLIANCE })).status === 403
 );
-r = await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE_REVIEW", note: "File reviewed." }, cookie: FINANCE });
-check("finance cannot complete compliance stage (RBAC)", r.status === 403);
-r = await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE_REVIEW" }, cookie: COMPLIANCE });
-check("compliance completes stage 5", r.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE_REVIEW", note: "File reviewed." }, cookie: FINANCE });
+check("finance cannot complete compliance stage (RBAC)", res.status === 403);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "COMPLIANCE_REVIEW" }, cookie: COMPLIANCE });
+check("compliance completes stage 5", res.status === 200);
 
 // Stage 6 must stay locked until obligation fully authorized+posted.
-r = await api("/api/actions/stage", { method: "POST", body: { key: "RELEASE_TAX_OBLIGATION_VERIFICATION" }, cookie: ADMIN });
-check("stage 6 blocked while obligation chain incomplete (no payment-to-release shortcut)", r.status === 409);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "RELEASE_TAX_OBLIGATION_VERIFICATION" }, cookie: ADMIN });
+check("stage 6 blocked while obligation chain incomplete (no payment-to-release shortcut)", res.status === 409);
 
-// 5. Full obligation chain: review -> approve -> authorize/post.
-r = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "review" }, cookie: COMPLIANCE });
-check("compliance records obligation review", r.status === 200);
-r = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "approve" }, cookie: AGENT });
-check("escrow agent approves obligation", r.status === 200);
-r = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "authorize" }, cookie: FINANCE });
-check("finance authorizes & posts charge", r.status === 200);
+// 5. Full obligation chain: review -> approve -> authorize/post -> stage 6 sign-off.
+res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "review" }, cookie: COMPLIANCE });
+check("compliance records obligation review", res.status === 200);
+res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "approve" }, cookie: AGENT });
+check("escrow agent approves obligation", res.status === 200);
+res = await api("/api/actions/obligation", { method: "POST", body: { id: obId, action: "authorize" }, cookie: FINANCE });
+check("finance authorizes & posts charge", res.status === 200);
 
-// Stage 6 requires explicit authorized sign-off after the obligation is posted.
-r = await api("/api/actions/stage", { method: "POST", body: { key: "RELEASE_TAX_OBLIGATION_VERIFICATION", note: "Posted charge reviewed." }, cookie: COMPLIANCE });
-check("unauthorized role cannot sign off stage 6", r.status === 403);
-r = await api("/api/actions/stage", { method: "POST", body: { key: "RELEASE_TAX_OBLIGATION_VERIFICATION" }, cookie: FINANCE });
-check("finance signs off stage 6 after posting", r.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "RELEASE_TAX_OBLIGATION_VERIFICATION", note: "Posted charge reviewed." }, cookie: COMPLIANCE });
+check("unauthorized role cannot sign off stage 6", res.status === 403);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "RELEASE_TAX_OBLIGATION_VERIFICATION" }, cookie: FINANCE });
+check("finance signs off stage 6 after posting", res.status === 200);
 
 p = (await api("/api/portal", { cookie: ADMIN })).json;
 check("charge posted to ledger with explicit USD currency", p.ledger.some((l) => l.entry_type === "CHARGE" && l.currency_code === "USD" && l.amount_cents === CHARGE_CENTS));
 check("balances reflect posted charge", p.balances.charges_cents === CHARGE_CENTS && p.balances.final_disbursement_cents === NET_CENTS);
-p.stages.find((s) => s.key === "RELEASE_TAX_OBLIGATION_VERIFICATION")?.status === "COMPLETED"
-  ? console.log("[PASS] stage 6 auto-completed after posting")
-  : (failures++, console.log("[FAIL] stage 6 did not complete"));
+check("stage 6 completed after posting + sign-off", p.stages.find((s) => s.key === "RELEASE_TAX_OBLIGATION_VERIFICATION").status === "COMPLETED");
 
 // 6. Agent authorization stage.
-r = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_AGENT_AUTHORIZATION" }, cookie: AGENT });
-check("agent authorizes release package (stage 8)", r.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_AGENT_AUTHORIZATION" }, cookie: AGENT });
+check("agent authorizes release package (stage 8)", res.status === 200);
 
 // 7. Document gate blocks disbursement authorization.
-r = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: FINANCE });
-check("disbursement blocked by unverified documents", r.status === 409);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: FINANCE });
+check("disbursement blocked by unverified documents", res.status === 409);
 for (const doc of (await api("/api/portal", { cookie: COMPLIANCE })).json.documents.filter((d) => d.status !== "VERIFIED")) {
-  if (doc.status === "MISSING")
-    await api("/api/actions/document", { method: "POST", body: { id: doc.id, action: "upload" }, cookie: COMPLIANCE });
-  await api("/api/actions/document", { method: "POST", body: { id: doc.id, action: "verify" }, cookie: COMPLIANCE });
+  if (doc.status === "MISSING") {
+    res = await api("/api/actions/document", { method: "POST", body: { id: doc.id, action: "upload" }, cookie: COMPLIANCE });
+    check(`document uploaded (${doc.title})`, res.status === 200);
+  }
+  res = await api("/api/actions/document", { method: "POST", body: { id: doc.id, action: "verify" }, cookie: COMPLIANCE });
+  check(`document verified (${doc.title})`, res.status === 200);
 }
-console.log("[INFO] outstanding documents uploaded & verified");
 
 // 8. Dual authorization: two distinct officers required.
-r = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: FINANCE });
-check("first approval recorded (1/2)", r.status === 200, String(r.json.message ?? r.json.error));
-r = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: FINANCE });
-check("same officer cannot double-approve", r.status === 409);
-r = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: AGENT });
-check("second distinct approval completes dual authorization", r.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: FINANCE });
+check("first approval recorded (1/2)", res.status === 200, String(res.json.message ?? res.json.error));
+res = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: FINANCE });
+check("same officer cannot double-approve", res.status === 409);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "DISBURSEMENT_AUTHORIZATION" }, cookie: AGENT });
+check("second distinct approval completes dual authorization", res.status === 200);
 
 p = (await api("/api/portal", { cookie: ADMIN })).json;
 check(
@@ -142,25 +155,25 @@ check("stage 7 auto-satisfied by system evaluation", p.stages.find((s) => s.key 
 check("two distinct approvers recorded", p.dualApprovals.length === 2);
 
 // 9. Release -> Settlement -> Closure.
-r = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_RELEASE" }, cookie: AGENT });
-check("escrow agent cannot execute release (RBAC)", r.status === 403);
-r = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_RELEASE" }, cookie: FINANCE });
-check("finance executes escrow release (stage 10)", r.status === 200);
-r = await api("/api/actions/stage", { method: "POST", body: { key: "SETTLEMENT" }, cookie: FINANCE });
-check("settlement executed (stage 11)", r.status === 200);
-r = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_CLOSURE" }, cookie: FINANCE });
-check("closure restricted to administrator (RBAC)", r.status === 403);
-r = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_CLOSURE" }, cookie: ADMIN });
-check("administrator closes escrow (stage 12)", r.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_RELEASE" }, cookie: AGENT });
+check("escrow agent cannot execute release (RBAC)", res.status === 403);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_RELEASE" }, cookie: FINANCE });
+check("finance executes escrow release (stage 10)", res.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "SETTLEMENT" }, cookie: FINANCE });
+check("settlement executed (stage 11)", res.status === 200);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_CLOSURE" }, cookie: FINANCE });
+check("closure restricted to administrator (RBAC)", res.status === 403);
+res = await api("/api/actions/stage", { method: "POST", body: { key: "ESCROW_CLOSURE" }, cookie: ADMIN });
+check("administrator closes escrow (stage 12)", res.status === 200);
 
 // 10. Certificate issuance + final state + audit integrity.
-r = await api("/api/actions/certificate", { method: "POST", cookie: AGENT });
-check("certificate issuance restricted to administrator", r.status === 403);
-r = await api("/api/actions/certificate", { method: "POST", cookie: ADMIN });
-check("certificate formally issued", r.status === 200);
+res = await api("/api/actions/certificate", { method: "POST", cookie: AGENT });
+check("certificate issuance restricted to administrator", res.status === 403);
+res = await api("/api/actions/certificate", { method: "POST", cookie: ADMIN });
+check("certificate formally issued", res.status === 200);
 
 p = (await api("/api/portal", { cookie: ADMIN })).json;
-check(`released funds correct ($${NET_CENTS / 100})`, p.balances.released_cents === NET_CENTS);
+check(`released funds correct ($${(NET_CENTS / 100).toLocaleString()})`, p.balances.released_cents === NET_CENTS);
 check("audit hash-chain intact", p.chain.valid === true, `${p.chain.entriesChecked} entries verified`);
 check("certificate marked ISSUED + VERIFIED", p.certificate.status === "ISSUED" && p.certificate.verification_status === "VERIFIED");
 check("account status CLOSED", p.escrow.status_code === "CLOSED");
