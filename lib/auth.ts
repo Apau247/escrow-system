@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import type { DatabaseSync } from "node:sqlite";
 import { readOrCreateHexKey } from "./field-crypto";
+import { dataDir } from "./storage";
 
 export type Role =
   | "CUSTOMER"
@@ -22,7 +23,13 @@ let secretCache: string | null = null;
 
 function jwtSecret(): string {
   if (secretCache) return secretCache;
-  const dir = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
+  // Explicit env override keeps sessions valid across serverless instances.
+  const envSecret = process.env.SESSION_SECRET;
+  if (envSecret && envSecret.length >= 32) {
+    secretCache = envSecret;
+    return secretCache;
+  }
+  const dir = dataDir();
   fs.mkdirSync(dir, { recursive: true });
   secretCache = readOrCreateHexKey(path.join(dir, "session.secret"), 48);
   return secretCache;

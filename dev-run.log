@@ -8,49 +8,7 @@
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 4.6s
+ ✓ Ready in 6s
  ○ Compiling /login ...
- ✓ Compiled /login in 1927ms (537 modules)
- GET /login 200 in 3758ms
- ○ Compiling /api/auth/login ...
- ✓ Compiled /api/auth/login in 1160ms (572 modules)
-[escrow-db] Seeded TEST data: 5 users (password Test123!), escrow account, ledger, stages, documents, obligations, certificate.
- POST /api/auth/login 200 in 3765ms
- ○ Compiling /dashboard ...
- ✓ Compiled /dashboard in 811ms (699 modules)
- GET /dashboard 200 in 1986ms
- ○ Compiling /api/portal ...
- ✓ Compiled /api/portal in 1114ms (705 modules)
- GET /api/portal 200 in 1493ms
- POST /api/auth/login 200 in 199ms
- GET /dashboard 200 in 634ms
- GET /api/portal 200 in 51ms
- ○ Compiling /timeline ...
- ✓ Compiled /timeline in 868ms (712 modules)
- GET /timeline 200 in 1890ms
- GET /api/portal 200 in 63ms
- ○ Compiling /obligations ...
- ✓ Compiled /obligations in 674ms (719 modules)
- GET /obligations 200 in 1638ms
- GET /api/portal 200 in 67ms
- ○ Compiling /api/auth/me ...
- ✓ Compiled /api/auth/me in 626ms (721 modules)
- GET /api/auth/me 200 in 799ms
- GET /dashboard 200 in 347ms
- GET /api/portal 200 in 40ms
- GET /login 200 in 279ms
- GET /dashboard 307 in 221ms
- GET /login 200 in 206ms
- POST /api/auth/login 200 in 156ms
- GET /dashboard 200 in 61ms
- GET /dashboard 200 in 85ms
- GET /api/portal 200 in 56ms
- GET /api/portal 200 in 60ms
- GET /dashboard 200 in 214ms
- GET /api/portal 200 in 45ms
- ○ Compiling /api/auth/logout ...
- ✓ Compiled /api/auth/logout in 1626ms (727 modules)
- POST /api/auth/logout 200 in 2221ms
- GET /login 200 in 418ms
- GET /login 200 in 442ms
- GET /dashboard 200 in 948ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled /login in 3.2s (558 modules)

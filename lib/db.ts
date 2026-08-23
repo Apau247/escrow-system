@@ -6,12 +6,13 @@ import { encryptField } from "./field-crypto";
 import { generateTotpSecret } from "./totp";
 import { hashPassword } from "./password";
 import { appendAudit } from "./audit";
+import { dataDir } from "./storage";
 
 let dbInstance: DatabaseSync | null = null;
 
 export function getDb(): DatabaseSync {
   if (dbInstance) return dbInstance;
-  const dir = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
+  const dir = dataDir();
   fs.mkdirSync(dir, { recursive: true });
   dbInstance = new DatabaseSync(path.join(dir, "escrow.db"));
   dbInstance.exec("PRAGMA journal_mode = WAL;");

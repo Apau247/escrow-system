@@ -1,4 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "env": {
+    "DATA_DIR": "/tmp/escrow-data",
+    "REQUIRE_MFA": "false",
+    "SESSION_SECRET": "afa0cc22eee69528cda9928c64a34ac05a52ca93a36d2160b08c4f48333303c25a3a240a93d80265349fa12a39cde103"
+  }
 }

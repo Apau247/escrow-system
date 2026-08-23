@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import { dataDir } from "./storage";
 
 let keyCache: Buffer | null = null;
 
@@ -27,7 +28,13 @@ export function readOrCreateHexKey(file: string, byteLength: number): string {
 
 function masterKey(): Buffer {
   if (keyCache) return keyCache;
-  const dir = process.env.DATA_DIR ?? path.join(process.cwd(), "data");
+  // Explicit env override keeps data decryptable across serverless instances.
+  const envKey = process.env.FIELD_ENCRYPTION_KEY;
+  if (envKey && /^[0-9a-fA-F]{64}$/.test(envKey)) {
+    keyCache = Buffer.from(envKey, "hex");
+    return keyCache;
+  }
+  const dir = dataDir();
   fs.mkdirSync(dir, { recursive: true });
   keyCache = Buffer.from(readOrCreateHexKey(path.join(dir, "field.key"), 32), "hex");
   return keyCache;
