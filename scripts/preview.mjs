@@ -35,7 +35,7 @@ await page.evaluate(async () => {
   const r = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "kendra.anderson@demo.escrow.test", password: "Test123!" }),
+    body: JSON.stringify({ email: "kendra.anderson@escrow.test", password: "Test123!" }),
   });
   if (!r.ok) throw new Error("kendra login failed: " + r.status);
 });

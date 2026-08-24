@@ -170,8 +170,10 @@ function migrate(db: DatabaseSync) {
   if (!userCols.includes("profile_title")) {
     db.exec("ALTER TABLE users ADD COLUMN profile_title TEXT");
     db.prepare("UPDATE users SET profile_title = 'Escrow Depositor' WHERE email = 'customer@escrow.test'").run();
-    db.prepare("UPDATE users SET profile_title = 'Next of Kin' WHERE email = 'kendra.anderson@demo.escrow.test'").run();
+    db.prepare("UPDATE users SET profile_title = 'Next of Kin' WHERE email = 'kendra.anderson@demo.escrow.test' OR email = 'kendra.anderson@escrow.test'").run();
   }
+  // Rename the next-of-kin login to drop the legacy "demo." label.
+  db.prepare("UPDATE users SET email = 'kendra.anderson@escrow.test' WHERE email = 'kendra.anderson@demo.escrow.test'").run();
 }
 
 function seedIfEmpty(db: DatabaseSync) {
@@ -185,7 +187,7 @@ function seedIfEmpty(db: DatabaseSync) {
   );
   const people: Array<[string, string, string, string | null]> = [
     ["Tabb Lyle Anderson", "customer@escrow.test", "CUSTOMER", "Escrow Depositor"],
-    ["Kendra Anderson", "kendra.anderson@demo.escrow.test", "CUSTOMER", "Next of Kin"],
+    ["Kendra Anderson", "kendra.anderson@escrow.test", "CUSTOMER", "Next of Kin"],
     ["Margaret Halloway", "agent@escrow.test", "ESCROW_AGENT", null],
     ["Daniel Osei", "compliance@escrow.test", "COMPLIANCE_OFFICER", null],
     ["Priya Nair", "finance@escrow.test", "FINANCE_OFFICER", null],

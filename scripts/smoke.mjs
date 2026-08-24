@@ -63,8 +63,8 @@ const AGENT = await login("agent@escrow.test");
 const ADMIN = await login("admin@escrow.test");
 
 // Next-of-kin customer account exists and can read the portal.
-let r = await login2("kendra.anderson@demo.escrow.test");
-check("next-of-kin demo customer can sign in and read portal", !!r);
+let r = await login2("kendra.anderson@escrow.test");
+check("next-of-kin customer can sign in and read portal", !!r);
 
 async function login2(email) {
   try {
