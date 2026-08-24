@@ -83,3 +83,10 @@
  POST /api/auth/login 401 in 117ms
  POST /api/auth/login 401 in 59ms
  POST /api/auth/login 401 in 68ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.3s (605 modules)
+ ✓ Compiled in 1989ms (267 modules)
+ GET /login 200 in 4353ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /icon.svg in 547ms (355 modules)
+ GET /icon.svg?ac7f5e34be704a26 200 in 1178ms
